@@ -215,3 +215,125 @@ VALUES
 select*from producto
 select*from ciudad
 select*from proveedor
+
+-- creación de VISTAS
+CREATE VIEW vw_productos_detalle AS
+SELECT 
+    p.id_producto,
+    p.nombre_producto,
+    tp.tipo,
+    p.precio_producto,
+    p.personalizado
+FROM producto p
+JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto;
+
+CREATE VIEW vw_ventas_cliente AS
+SELECT
+    pv.id_pedido_venta,
+    pv.fecha,
+    c.cliente,
+    ci.nombre_ciudad
+FROM pedido_venta pv
+JOIN cliente c ON pv.id_cliente = c.id_cliente
+JOIN ciudad ci ON pv.id_ciudad = ci.id_ciudad;
+
+CREATE VIEW vw_detalle_ventas AS
+SELECT
+    dv.id_pedido_venta,
+    p.nombre_producto,
+    dv.cant_venta,
+    dv.precio_venta,
+    (dv.cant_venta * dv.precio_venta) AS subtotal
+FROM detalle_venta dv
+JOIN producto p ON dv.id_producto = p.id_producto;
+
+-- creacion de FUNCIONES
+	-- total de ventas
+DELIMITER //
+
+CREATE FUNCTION fn_total_venta2(p_id_venta INT)
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE total DECIMAL(10,2);
+
+    SELECT IFNULL(SUM(cant_venta * precio_venta), 0)
+    INTO total
+    FROM detalle_venta
+    WHERE id_pedido_venta = p_id_venta;
+
+    RETURN total;
+END//
+
+DELIMITER ;
+
+	-- precio promedio por producto
+DELIMITER //
+
+CREATE FUNCTION fn_precio_promedio2()
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE promedio DECIMAL(10,2);
+
+    SELECT AVG(precio_producto)
+    INTO promedio
+    FROM producto;
+
+    RETURN promedio;
+END//
+
+DELIMITER ;
+
+-- creacion de STORED PRODCEDURES
+
+	-- lista ventas por cliente
+DELIMITER //
+
+CREATE PROCEDURE sp_ventas_por_cliente(IN p_id_cliente INT)
+BEGIN
+    SELECT
+        pv.id_pedido_venta,
+        pv.fecha,
+        fn_total_venta(pv.id_pedido_venta) AS total_venta
+    FROM pedido_venta pv
+    WHERE pv.id_cliente = p_id_cliente;
+END//
+
+DELIMITER ;
+
+DELIMITER //
+	-- insertar cliente
+CREATE PROCEDURE sp_insertar_cliente(
+    IN p_cliente VARCHAR(20),
+    IN p_id_tipo_cliente INT,
+    IN p_documento VARCHAR(20),
+    IN p_direccion VARCHAR(40),
+    IN p_telefono VARCHAR(20),
+    IN p_email VARCHAR(30)
+)
+BEGIN
+    INSERT INTO cliente
+    (cliente, id_tipo_cliente, documento, direccion, telefono, email)
+    VALUES
+    (p_cliente, p_id_tipo_cliente, p_documento, p_direccion, p_telefono, p_email);
+END//
+
+DELIMITER ;
+
+-- creacion de TRIGGERS
+
+	-- validar precio por producto
+ DELIMITER //
+
+CREATE TRIGGER trg_precio_producto
+BEFORE INSERT ON producto
+FOR EACH ROW
+BEGIN
+    IF NEW.precio_producto <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El precio debe ser mayor a 0';
+    END IF;
+END//
+
+DELIMITER ;
