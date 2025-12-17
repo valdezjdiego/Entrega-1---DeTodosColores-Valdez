@@ -316,3 +316,73 @@ BEGIN
 END//
 
 DELIMITER ;
+
+-- ====================================================================================================
+-- segundo script con insercion de datos + validacion vistas, funciones, stored procedures y triggers 
+-- ====================================================================================================
+
+USE proyecto_Valdez;
+
+-- insercion de datos
+
+INSERT INTO pedido_compra (id_pedido_compra, fecha, id_proveedor, id_ciudad, gastos)
+VALUES
+(6, '2025-02-05', 1, 1, 1200.00),
+(7, '2025-02-08', 2, 5, 980.50),
+(8, '2025-02-12', 3, 2, 1750.00);
+
+INSERT INTO detalle_compra (id_pedido_compra, id_producto, cantidad, precio)
+VALUES
+(6, 1, 40, 260.00),
+(6, 3, 60, 160.00),
+(7, 5, 30, 210.00),
+(7, 8, 50, 120.00),
+(8, 10, 25, 300.00);
+
+INSERT INTO detalle_compra_insumo (id_pedido_compra, id_insumo, cantidad, precio)
+VALUES
+(6, 1, 100, 35.00),
+(6, 6, 20, 150.00),
+(7, 2, 80, 40.00),
+(8, 3, 60, 55.00),
+(8, 6, 25, 145.00);
+
+INSERT INTO pedido_venta (id_pedido_venta, fecha, id_cliente, id_ciudad)
+VALUES
+(6, '2025-03-01', 1, 1),
+(7, '2025-03-02', 2, 6),
+(8, '2025-03-03', 3, 1),
+(9, '2025-03-05', 4, 5),
+(10,'2025-03-06', 5, 1);
+
+INSERT INTO detalle_venta (id_pedido_venta, id_producto, cant_venta, precio_venta)
+VALUES
+(6, 1, 10, 400.00),
+(6, 2, 5, 550.00),
+(7, 3, 20, 180.00),
+(7, 4, 15, 220.00),
+(8, 5, 8, 300.00),
+(8, 6, 6, 350.00),
+(9, 8, 25, 150.00),
+(9, 11, 10, 250.00),
+(10, 14, 5, 480.00);
+
+
+-- prueba de vistas de producto y ventas
+SELECT * FROM vw_productos_detalle;
+
+SELECT * FROM vw_detalle_ventas;
+
+-- prueba de funciones
+SELECT fn_total_venta2(6) AS total_venta_pedido_6;
+
+SELECT fn_precio_promedio2() AS precio_promedio;
+
+-- Stored procedure
+CALL sp_ventas_por_cliente(1);
+
+-- Prueba de trigger (deberia fallar el insert porque precio es menor a 0)
+INSERT INTO producto (nombre_producto, id_tipo_producto, descripcion_producto, precio_producto, personalizado)
+VALUES ('Producto prueba', 1, 'Error de precio', -50, 'NO');
+
+
